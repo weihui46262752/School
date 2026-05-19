@@ -401,10 +401,10 @@
             if (!validatePhone(phone)) { alert('请输入正确的手机号码'); return; }
             if (!selectedDate || !selectedSlot) { alert('请选择预约日期和场次'); return; }
 
-            // 检查身份证+场次是否重复预约
-            const existingRecord = records.find(r => r.idCard === idCard && r.date === selectedDate && r.slot === selectedSlot);
-            if (existingRecord) {
-                alert(`该身份证号已在【${selectedDate} ${selectedSlot}场】预约过\n预约人：${existingRecord.name}\n请选择其他场次或日期`);
+            // 检查身份证是否重复预约（同一天同一身份证只能预约一次）
+            const todayBook = records.find(r => r.idCard && r.idCard === idCard && r.date === selectedDate);
+            if (todayBook) {
+                alert(`该身份证号已在【${todayBook.date} ${todayBook.slot}场】预约过！\n预约人：${todayBook.name}\n同一身份证每天仅限预约一次，请选择其他日期。`);
                 return;
             }
 
