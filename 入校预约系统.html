@@ -361,7 +361,24 @@
         }
 
         function validateIdCard(id) {
-            return /^[1-9]\d{5}(19|20)\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])\d{3}[\dXx]$/.test(id);
+            // 基础格式校验：18位，最后一位可以是X
+            if (!/^[1-9]\d{5}(19|20)\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])\d{3}[\dXx]$/.test(id)) {
+                return { valid: false, msg: '身份证格式不正确，应为18位' };
+            }
+            
+            // 校验码验证
+            const factors = [7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2];
+            const checkCodes = ['1', '0', 'X', '9', '8', '7', '6', '5', '4', '3', '2'];
+            let sum = 0;
+            for (let i = 0; i < 17; i++) {
+                sum += parseInt(id[i]) * factors[i];
+            }
+            const checkCode = checkCodes[sum % 11];
+            if (checkCode !== id[17].toUpperCase()) {
+                return { valid: false, msg: '身份证校验码错误，请检查号码是否正确' };
+            }
+            
+            return { valid: true, msg: '校验通过' };
         }
 
         function validatePhone(phone) {
@@ -374,13 +391,33 @@
             const phone = document.getElementById('phone').value.trim();
 
             if (!name) { alert('请输入姓名'); return; }
-            if (!validateIdCard(idCard)) { alert('请输入正确的18位身份证号'); return; }
+            if (!idCard) { alert('请输入身份证号'); return; }
+            const idCardResult = validateIdCard(idCard);
+            if (!idCardResult.valid) { 
+                alert(idCardResult.msg); 
+                document.getElementById('idCard').focus();
+                return; 
+            }
             if (!validatePhone(phone)) { alert('请输入正确的手机号码'); return; }
             if (!selectedDate || !selectedSlot) { alert('请选择预约日期和场次'); return; }
+
+            // 检查身份证+场次是否重复预约
+            const existingRecord = records.find(r => r.idCard === idCard && r.date === selectedDate && r.slot === selectedSlot);
+            if (existingRecord) {
+                alert(`该身份证号已在【${selectedDate} ${selectedSlot}场】预约过\n预约人：${existingRecord.name}\n请选择其他场次或日期`);
+                return;
+            }
 
             const slotKey = `${selectedDate}_${selectedSlot}`;
             const booked = records.filter(r => r.slotKey === slotKey).length;
             if (booked >= MAX_PER_SLOT) { alert('该场次已约满，请选择其他场次'); return; }
+
+            // 生成预约号：日期+场次+序号
+            const slotSeq = booked + 1;
+            const dateCode = selectedDate.replace(/-/g, '').substring(4); // 月日，如 0705
+            const slotCode = selectedSlot === '上午' ? 'AM' : 'PM';
+            const bookSeq = String(slotSeq).padStart(2, '0');
+            const bookNo = `YUY${dateCode}${slotCode}${bookSeq}`;
 
             const timeLabel = selectedSlot === '上午' ? '9:00-11:00' : '14:00-16:00';
             const record = {
@@ -391,6 +428,7 @@
                 timeLabel,
                 slotKey,
                 bookTime: new Date().toLocaleString(),
+                bookNo: bookNo,
                 id: Date.now()
             };
 
@@ -423,11 +461,26 @@
             document.getElementById('successPage').classList.add('show');
             document.getElementById('adminBtn').style.display = 'none';
 
+            // 隐藏身份证中间部分
+            const hiddenIdCard = record.idCard.substring(0, 6) + '********' + record.idCard.substring(14);
+
             document.getElementById('successDetail').innerHTML = `
-                <div class="row"><span class="label">预约人</span><span class="value">${record.name}</span></div>
+                <div style="text-align:center;margin-bottom:15px;">
+                    <div style="color:#667eea;font-size:12px;">入校参观预约回执</div>
+                    <div style="font-size:20px;font-weight:bold;color:#333;margin-top:5px;">${record.bookNo}</div>
+                </div>
+                <div class="row"><span class="label">预约人姓名</span><span class="value">${record.name}</span></div>
+                <div class="row"><span class="label">身份证号</span><span class="value">${hiddenIdCard}</span></div>
+                <div class="row"><span class="label">联系电话</span><span class="value">${record.phone}</span></div>
                 <div class="row"><span class="label">预约日期</span><span class="value">${record.displayDate}</span></div>
-                <div class="row"><span class="label">预约场次</span><span class="value">${record.slot} ${record.timeLabel}</span></div>
-                <div class="row"><span class="label">预约号</span><span class="value">${record.id}</span></div>
+                <div class="row"><span class="label">入校场次</span><span class="value">${record.slot} ${record.timeLabel}</span></div>
+                <div class="row"><span class="label">预约时间</span><span class="value">${record.bookTime}</span></div>
+                <div style="background:#fff3cd;border-radius:8px;padding:12px;margin-top:15px;font-size:12px;color:#856404;line-height:1.8;">
+                    <strong>📌 温馨提示：</strong><br>
+                    1. 请携带预约人身份证原件入校<br>
+                    2. 请按预约场次时间准时到达<br>
+                    3. 如需取消预约，请提前联系
+                </div>
             `;
         }
 
