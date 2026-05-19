@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>入校预约系统</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; background: #f0f4f8; min-height: 100vh; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px 20px; text-align: center; color: white; }
+        .header h1 { font-size: 22px; margin-bottom: 8px; }
+        .header p { font-size: 13px; opacity: 0.9; }
+        .container { max-width: 500px; margin: 0 auto; padding: 20px; }
+        .info-card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+        .info-row { display: flex; align-items: center; padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
+        .info-row:last-child { border-bottom: none; }
+        .info-icon { width: 40px; height: 40px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-size: 18px; margin-right: 12px; flex-shrink: 0; }
+        .info-text { flex: 1; }
+        .info-label { font-size: 12px; color: #999; margin-bottom: 3px; }
+        .info-value { font-size: 14px; color: #333; font-weight: 500; }
+        .section-title { font-size: 16px; color: #333; font-weight: bold; margin-bottom: 15px; padding-left: 12px; border-left: 4px solid #667eea; }
+        .form-group { margin-bottom: 18px; }
+        .form-group label { display: block; font-size: 14px; color: #333; margin-bottom: 8px; font-weight: 500; }
+        .form-group label span { color: #ff6b6b; }
+        .form-group select { width: 100%; padding: 14px 16px; border: 2px solid #eee; border-radius: 10px; font-size: 15px; transition: border-color 0.3s; outline: none; background: #fafafa; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23999' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 15px center; padding-right: 40px; }
+        .form-group select:focus { border-color: #667eea; background-color: white; }
+        .form-group input { width: 100%; padding: 14px 16px; border: 2px solid #eee; border-radius: 10px; font-size: 15px; transition: border-color 0.3s; outline: none; background: #fafafa; }
+        .form-group input:focus { border-color: #667eea; background: white; }
+        .form-group .hint { font-size: 12px; color: #999; margin-top: 5px; }
+        .submit-btn { width: 100%; padding: 16px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; transition: transform 0.2s; }
+        .submit-btn:hover { transform: scale(1.02); }
+        .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .success-page { display: none; text-align: center; padding: 40px 20px; }
+        .success-page.show { display: block; }
+        .success-icon { width: 80px; height: 80px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; font-size: 40px; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        .success-title { font-size: 22px; color: #333; margin-bottom: 10px; }
+        .success-msg { color: #666; font-size: 14px; margin-bottom: 25px; line-height: 1.8; }
+        .success-detail { background: #f8f9fa; border-radius: 12px; padding: 20px; text-align: left; margin-bottom: 20px; }
+        .success-detail .row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
+        .success-detail .row:last-child { border-bottom: none; }
+        .success-detail .label { color: #999; font-size: 13px; }
+        .success-detail .value { color: #333; font-weight: 500; }
+        .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 2000; justify-content: center; align-items: center; }
+        .modal.show { display: flex; }
+        .modal-content { background: white; border-radius: 15px; width: 95%; max-width: 450px; max-height: 85vh; overflow: hidden; }
+        .modal-header { padding: 15px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; display: flex; justify-content: space-between; align-items: center; }
+        .modal-close { background: none; border: none; color: white; font-size: 24px; cursor: pointer; }
+        .modal-body { padding: 20px; max-height: 70vh; overflow-y: auto; }
+        .tabs { display: flex; border-bottom: 2px solid #eee; }
+        .tab { flex: 1; padding: 12px; text-align: center; cursor: pointer; font-size: 14px; color: #666; }
+        .tab.active { color: #667eea; border-bottom: 2px solid #667eea; margin-bottom: -2px; }
+        .stat-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 12px; padding: 20px; margin-bottom: 15px; text-align: center; }
+        .stat-num { font-size: 36px; font-weight: bold; }
+        .stat-label { font-size: 13px; opacity: 0.9; }
+        .record-item { background: #f9f9f9; border-radius: 10px; padding: 15px; margin-bottom: 10px; }
+        .record-header { display: flex; justify-content: space-between; margin-bottom: 10px; }
+        .record-name { font-weight: bold; color: #333; }
+        .record-badge { background: #667eea; color: white; padding: 3px 10px; border-radius: 15px; font-size: 11px; }
+        .record-detail { font-size: 13px; color: #666; line-height: 1.8; }
+        .setting-item { margin-bottom: 15px; }
+        .setting-item label { display: block; font-size: 13px; color: #666; margin-bottom: 5px; }
+        .setting-item input, .setting-item textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
+        .setting-item textarea { min-height: 80px; resize: vertical; }
+        .save-btn { width: 100%; padding: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; cursor: pointer; }
+        .filter-bar { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
+        .filter-btn { padding: 8px 15px; background: #f0f0f0; border: none; border-radius: 20px; font-size: 12px; cursor: pointer; }
+        .filter-btn.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .no-data { text-align: center; padding: 40px; color: #999; }
+        .admin-btn { position: fixed; bottom: 20px; right: 20px; width: 50px; height: 50px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 50%; font-size: 20px; cursor: pointer; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4); z-index: 100; display: none; }
+        .admin-btn.show { display: flex; align-items: center; justify-content: center; }
+        .login-modal { text-align: center; padding: 20px; }
+        .login-modal input { width: 100%; margin-bottom: 15px; }
+        .login-modal .error { color: #ff6b6b; font-size: 13px; margin-bottom: 10px; display: none; }
+        /* 管理员入口 - 隐藏彩蛋 */
+        .admin-trigger { position: fixed; bottom: 10px; left: 10px; width: 30px; height: 30px; opacity: 0.1; cursor: pointer; z-index: 50; }
+        @media (max-width: 500px) { .container { padding: 15px; } }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🏫 入校预约系统</h1>
+        <p>请提前预约，凭预约信息入校参观</p>
+    </div>
+
+    <div class="container" id="bookingPage">
+        <div class="info-card">
+            <div class="section-title">📋 预约须知</div>
+            <div class="info-row">
+                <div class="info-icon">📅</div>
+                <div class="info-text">
+                    <div class="info-label">开放日期</div>
+                    <div class="info-value">2025年7月5日 - 8月20日</div>
+                </div>
+            </div>
+            <div class="info-row">
+                <div class="info-icon">⏰</div>
+                <div class="info-text">
+                    <div class="info-label">开放场次</div>
+                    <div class="info-value">上午场 9:00-11:00 &nbsp;|&nbsp; 下午场 14:00-16:00</div>
+                </div>
+            </div>
+            <div class="info-row">
+                <div class="info-icon">👥</div>
+                <div class="info-text">
+                    <div class="info-label">每场限额</div>
+                    <div class="info-value">每场次仅限 15 人</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-card">
+            <div class="section-title">📆 选择预约日期</div>
+            <div class="form-group">
+                <select id="dateSelect" onchange="selectDate(this.value)">
+                    <option value="">请选择预约日期</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="info-card" id="timeCard" style="display:none;">
+            <div class="section-title">⏰ 选择预约场次</div>
+            <div class="form-group">
+                <select id="timeSelect" onchange="selectSlot(this.value)">
+                    <option value="">请选择场次</option>
+                    <option value="上午">上午场 9:00-11:00</option>
+                    <option value="下午">下午场 14:00-16:00</option>
+                </select>
+            </div>
+            <div id="slotStatus" style="text-align:center;padding:15px;background:#f8f9fa;border-radius:10px;margin-top:10px;">
+                <span id="slotRemain" style="font-size:14px;color:#666;">请先选择日期和场次</span>
+            </div>
+        </div>
+
+        <div class="form-card" id="formCard" style="display:none;">
+            <div class="section-title">📝 填写预约信息</div>
+            <div class="form-group">
+                <label>姓名 <span>*</span></label>
+                <input type="text" id="name" placeholder="请输入真实姓名" maxlength="20">
+            </div>
+            <div class="form-group">
+                <label>身份证号 <span>*</span></label>
+                <input type="text" id="idCard" placeholder="请输入18位身份证号" maxlength="18">
+                <div class="hint">用于入校身份核验，请如实填写</div>
+            </div>
+            <div class="form-group">
+                <label>手机号 <span>*</span></label>
+                <input type="tel" id="phone" placeholder="请输入手机号码" maxlength="11">
+                <div class="hint">预约成功后将发送短信通知</div>
+            </div>
+            <button class="submit-btn" id="submitBtn" onclick="submitBooking()">确认预约</button>
+        </div>
+
+        <div class="success-page" id="successPage">
+            <div class="success-icon">✓</div>
+            <div class="success-title">预约成功！</div>
+            <div class="success-msg">您已成功预约入校参观<br>请携带身份证原件，按预约时间到校</div>
+            <div class="success-detail" id="successDetail"></div>
+            <button class="submit-btn" onclick="location.reload()">返回首页</button>
+        </div>
+    </div>
+
+    <!-- 管理员入口 - 隐蔽小按钮 -->
+    <div class="admin-trigger" id="adminTrigger" onclick="handleAdminTrigger()"></div>
+    <button class="admin-btn" id="adminBtn" onclick="openLoginModal()">⚙️</button>
+
+    <!-- 管理员登录弹窗 -->
+    <div class="modal" id="loginModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>🔐 管理员登录</span>
+                <button class="modal-close" onclick="closeLoginModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="login-modal">
+                    <div class="error" id="loginError">密码错误，请重试</div>
+                    <div class="form-group">
+                        <label>请输入管理员密码</label>
+                        <input type="password" id="adminPassword" placeholder="输入密码" onkeypress="if(event.key==='Enter')tryLogin()">
+                    </div>
+                    <button class="save-btn" onclick="tryLogin()">登录</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 管理后台弹窗 -->
+    <div class="modal" id="adminModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>⚙️ 管理后台</span>
+                <button class="modal-close" onclick="closeAdmin()">×</button>
+            </div>
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('stats')">数据统计</div>
+                <div class="tab" onclick="switchTab('records')">预约记录</div>
+                <div class="tab" onclick="switchTab('notify')">通知设置</div>
+            </div>
+            <div class="modal-body">
+                <div id="tab-stats">
+                    <div class="stat-card">
+                        <div class="stat-num" id="statTotal">0</div>
+                        <div class="stat-label">总预约人数</div>
+                    </div>
+                    <div class="stat-card" style="background: linear-gradient(135deg, #4ECDC4 0%, #44a08d 100%);">
+                        <div class="stat-num" id="statToday">0</div>
+                        <div class="stat-label">今日预约</div>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                        <div class="stat-card" style="background: linear-gradient(135deg, #FF6B6B 0%, #ee5a5a 100%); padding:15px;">
+                            <div class="stat-num" id="statAm" style="font-size:20px;">0</div>
+                            <div class="stat-label" style="font-size:11px;">上午场已约</div>
+                        </div>
+                        <div class="stat-card" style="background: linear-gradient(135deg, #FFEAA7 0%, #fdcb6e 100%); padding:15px;">
+                            <div class="stat-num" id="statPm" style="font-size:20px;">0</div>
+                            <div class="stat-label" style="font-size:11px;">下午场已约</div>
+                        </div>
+                    </div>
+                </div>
+                <div id="tab-records" style="display:none;">
+                    <div class="filter-bar" id="recordFilter"></div>
+                    <div id="recordList"></div>
+                </div>
+                <div id="tab-notify" style="display:none;">
+                    <div class="setting-item"><label>管理员密码（修改请谨慎）</label><input type="password" id="cfg-password" placeholder="留空则不修改"></div>
+                    <div class="setting-item"><label>企业微信 Webhook（管理员通知）</label><input type="text" id="cfg-webhook" placeholder="填入Webhook地址"></div>
+                    <div class="setting-item"><label>短信接口（选填）</label><input type="text" id="cfg-sms" placeholder="如已配置短信服务"></div>
+                    <div class="setting-item"><label>管理员手机号</label><input type="tel" id="cfg-adminPhone" placeholder="接收预约通知"></div>
+                    <button class="save-btn" onclick="saveNotify()">保存设置</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const START_DATE = new Date('2025-07-05');
+        const END_DATE = new Date('2025-08-20');
+        const MAX_PER_SLOT = 15;
+
+        let config = JSON.parse(localStorage.getItem('booking_config')) || {
+            password: 'admin123',
+            webhook: '',
+            adminPhone: '',
+            sms: ''
+        };
+        let records = JSON.parse(localStorage.getItem('booking_records')) || [];
+        let selectedDate = null;
+        let selectedSlot = null;
+        let isAdmin = false;
+        let triggerCount = 0;
+
+        function init() {
+            saveConfig();
+            renderDateOptions();
+            loadSettings();
+            checkAdmin();
+        }
+
+        function saveConfig() {
+            localStorage.setItem('booking_config', JSON.stringify(config));
+        }
+
+        function checkAdmin() {
+            const adminKey = sessionStorage.getItem('booking_admin');
+            if (adminKey === 'true') {
+                isAdmin = true;
+                document.getElementById('adminBtn').classList.add('show');
+            }
+        }
+
+        function renderDateOptions() {
+            const select = document.getElementById('dateSelect');
+            const weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+            let options = '<option value="">请选择预约日期</option>';
+            let current = new Date(START_DATE);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            while (current <= END_DATE) {
+                if (current >= today) {
+                    const month = current.getMonth() + 1;
+                    const day = current.getDate();
+                    const week = weekDays[current.getDay()];
+                    const dateStr = formatDate(current);
+                    // 格式：7月5日 周六
+                    options += `<option value="${dateStr}">${month}月${day}日 ${week}</option>`;
+                }
+                current.setDate(current.getDate() + 1);
+            }
+            select.innerHTML = options;
+        }
+
+        // 管理员入口触发器 - 连续点击5次显示后台按钮
+        function handleAdminTrigger() {
+            triggerCount++;
+            if (triggerCount >= 5) {
+                document.getElementById('adminBtn').classList.add('show');
+                triggerCount = 0;
+            }
+            // 3秒内未达到5次则重置
+            setTimeout(() => { triggerCount = 0; }, 3000);
+        }
+
+        function selectDate(dateStr) {
+            selectedDate = dateStr;
+            selectedSlot = null;
+            document.getElementById('timeSelect').value = '';
+            document.getElementById('timeCard').style.display = dateStr ? 'block' : 'none';
+            document.getElementById('formCard').style.display = 'none';
+            updateSlotStatus();
+        }
+
+        function selectSlot(slot) {
+            selectedSlot = slot;
+            updateSlotStatus();
+            document.getElementById('formCard').style.display = slot ? 'block' : 'none';
+            if (slot) {
+                document.getElementById('formCard').scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        function updateSlotStatus() {
+            const statusEl = document.getElementById('slotRemain');
+            if (!selectedDate) {
+                statusEl.textContent = '请先选择日期和场次';
+                statusEl.style.color = '#666';
+                return;
+            }
+            if (!selectedSlot) {
+                statusEl.textContent = '请选择上午场或下午场';
+                statusEl.style.color = '#666';
+                return;
+            }
+
+            const slotKey = `${selectedDate}_${selectedSlot}`;
+            const booked = records.filter(r => r.slotKey === slotKey).length;
+            const remain = MAX_PER_SLOT - booked;
+
+            if (remain <= 0) {
+                statusEl.textContent = '⚠️ 该场次已约满，请选择其他场次';
+                statusEl.style.color = '#ff6b6b';
+            } else {
+                const timeRange = selectedSlot === '上午' ? '9:00-11:00' : '14:00-16:00';
+                statusEl.innerHTML = `✅ ${selectedSlot}场 ${timeRange}<br>剩余 <strong style="color:#667eea;font-size:18px;">${remain}</strong> 个名额`;
+                statusEl.style.color = '#333';
+            }
+        }
+
+        function formatDate(date) {
+            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        }
+
+        function formatDisplayDate(dateStr) {
+            const parts = dateStr.split('-');
+            const year = parseInt(parts[0]);
+            const month = parseInt(parts[1]);
+            const day = parseInt(parts[2]);
+            const d = new Date(year, month - 1, day);
+            const weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+            return `${month}月${day}日 ${weekDays[d.getDay()]}`;
+        }
+
+        function validateIdCard(id) {
+            return /^[1-9]\d{5}(19|20)\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])\d{3}[\dXx]$/.test(id);
+        }
+
+        function validatePhone(phone) {
+            return /^1[3-9]\d{9}$/.test(phone);
+        }
+
+        function submitBooking() {
+            const name = document.getElementById('name').value.trim();
+            const idCard = document.getElementById('idCard').value.trim().toUpperCase();
+            const phone = document.getElementById('phone').value.trim();
+
+            if (!name) { alert('请输入姓名'); return; }
+            if (!validateIdCard(idCard)) { alert('请输入正确的18位身份证号'); return; }
+            if (!validatePhone(phone)) { alert('请输入正确的手机号码'); return; }
+            if (!selectedDate || !selectedSlot) { alert('请选择预约日期和场次'); return; }
+
+            const slotKey = `${selectedDate}_${selectedSlot}`;
+            const booked = records.filter(r => r.slotKey === slotKey).length;
+            if (booked >= MAX_PER_SLOT) { alert('该场次已约满，请选择其他场次'); return; }
+
+            const timeLabel = selectedSlot === '上午' ? '9:00-11:00' : '14:00-16:00';
+            const record = {
+                name, idCard, phone,
+                date: selectedDate,
+                displayDate: formatDisplayDate(selectedDate),
+                slot: selectedSlot,
+                timeLabel,
+                slotKey,
+                bookTime: new Date().toLocaleString(),
+                id: Date.now()
+            };
+
+            records.push(record);
+            localStorage.setItem('booking_records', JSON.stringify(records));
+            sendNotify(record);
+            showSuccess(record);
+        }
+
+        async function sendNotify(record) {
+            if (config.webhook) {
+                try {
+                    const msg = {
+                        msgtype: 'markdown',
+                        markdown: {
+                            content: `🏫 **新预约通知**\n>👤 姓名：${record.name}\n>📱 手机：${record.phone}\n>🆔 身份证：${record.idCard}\n>📅 日期：${record.displayDate}\n>⏰ 场次：${record.slot}场 ${record.timeLabel}\n>🕐 预约时间：${record.bookTime}`
+                        }
+                    };
+                    await fetch(config.webhook, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(msg) });
+                } catch (e) { console.log('通知发送失败'); }
+            }
+
+            if (config.sms) {
+                console.log('发送短信给:', record.phone, '预约成功');
+            }
+        }
+
+        function showSuccess(record) {
+            document.getElementById('bookingPage').style.display = 'none';
+            document.getElementById('successPage').classList.add('show');
+            document.getElementById('adminBtn').style.display = 'none';
+
+            document.getElementById('successDetail').innerHTML = `
+                <div class="row"><span class="label">预约人</span><span class="value">${record.name}</span></div>
+                <div class="row"><span class="label">预约日期</span><span class="value">${record.displayDate}</span></div>
+                <div class="row"><span class="label">预约场次</span><span class="value">${record.slot} ${record.timeLabel}</span></div>
+                <div class="row"><span class="label">预约号</span><span class="value">${record.id}</span></div>
+            `;
+        }
+
+        function openLoginModal() {
+            document.getElementById('loginModal').classList.add('show');
+            document.getElementById('adminPassword').value = '';
+            document.getElementById('loginError').style.display = 'none';
+            document.getElementById('adminPassword').focus();
+        }
+
+        function closeLoginModal() {
+            document.getElementById('loginModal').classList.remove('show');
+        }
+
+        function tryLogin() {
+            const pwd = document.getElementById('adminPassword').value;
+            if (pwd === config.password) {
+                sessionStorage.setItem('booking_admin', 'true');
+                isAdmin = true;
+                closeLoginModal();
+                openAdmin();
+            } else {
+                document.getElementById('loginError').style.display = 'block';
+                document.getElementById('adminPassword').value = '';
+            }
+        }
+
+        function openAdmin() {
+            if (!isAdmin) {
+                openLoginModal();
+                return;
+            }
+            document.getElementById('adminModal').classList.add('show');
+            updateStats();
+            renderRecords();
+            loadSettings();
+        }
+
+        function closeAdmin() {
+            document.getElementById('adminModal').classList.remove('show');
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('tab-stats').style.display = tab === 'stats' ? 'block' : 'none';
+            document.getElementById('tab-records').style.display = tab === 'records' ? 'block' : 'none';
+            document.getElementById('tab-notify'). style.display = tab === 'notify' ? 'block' : 'none';
+            if (tab === 'records') renderRecords();
+        }
+
+        function updateStats() {
+            const today = formatDate(new Date());
+            document.getElementById('statTotal').textContent = records.length;
+            document.getElementById('statToday').textContent = records.filter(r => r.date === today).length;
+
+            const amBooked = records.filter(r => r.slot === '上午').length;
+            const pmBooked = records.filter(r => r.slot === '下午').length;
+            document.getElementById('statAm').textContent = amBooked;
+            document.getElementById('statPm').textContent = pmBooked;
+        }
+
+        function renderRecords() {
+            const filter = document.getElementById('recordFilter');
+            const dates = [...new Set(records.map(r => r.date))].sort();
+            let filterHtml = '<button class="filter-btn active" onclick="filterRecords(\'all\')">全部</button>';
+            dates.forEach(d => {
+                filterHtml += `<button class="filter-btn" onclick="filterRecords('${d}')">${formatDisplayDate(d)}</button>`;
+            });
+            filter.innerHTML = filterHtml;
+
+            const list = document.getElementById('recordList');
+            if (records.length === 0) {
+                list.innerHTML = '<div class="no-data">暂无预约记录</div>';
+                return;
+            }
+
+            let html = '';
+            records.slice().reverse().forEach(r => {
+                html += `<div class="record-item">
+                    <div class="record-header">
+                        <span class="record-name">${r.name}</span>
+                        <span class="record-badge">${r.slot} ${r.timeLabel}</span>
+                    </div>
+                    <div class="record-detail">
+                        📱 ${r.phone}<br>
+                        🆔 ${r.idCard}<br>
+                        📅 ${r.displayDate} &nbsp; ⏰ ${r.bookTime}
+                    </div>
+                </div>`;
+            });
+            list.innerHTML = html;
+        }
+
+        function filterRecords(date) {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+
+            const list = document.getElementById('recordList');
+            let filtered = date === 'all' ? records : records.filter(r => r.date === date);
+            let html = '';
+            filtered.slice().reverse().forEach(r => {
+                html += `<div class="record-item">
+                    <div class="record-header">
+                        <span class="record-name">${r.name}</span>
+                        <span class="record-badge">${r.slot} ${r.timeLabel}</span>
+                    </div>
+                    <div class="record-detail">
+                        📱 ${r.phone}<br>
+                        🆔 ${r.idCard}<br>
+                        📅 ${r.displayDate} &nbsp; ⏰ ${r.bookTime}
+                    </div>
+                </div>`;
+            });
+            list.innerHTML = html || '<div class="no-data">暂无记录</div>';
+        }
+
+        function loadSettings() {
+            document.getElementById('cfg-password').value = '';
+            document.getElementById('cfg-password').placeholder = '••••••';
+            document.getElementById('cfg-webhook').value = config.webhook || '';
+            document.getElementById('cfg-adminPhone').value = config.adminPhone || '';
+            document.getElementById('cfg-sms').value = config.sms || '';
+        }
+
+        function saveNotify() {
+            const newPwd = document.getElementById('cfg-password').value.trim();
+            if (newPwd) {
+                config.password = newPwd;
+            }
+            config.webhook = document.getElementById('cfg-webhook').value;
+            config.adminPhone = document.getElementById('cfg-adminPhone').value;
+            config.sms = document.getElementById('cfg-sms').value;
+            saveConfig();
+            alert('设置已保存');
+        }
+
+        init();
+    </script>
+</body>
+</html>
